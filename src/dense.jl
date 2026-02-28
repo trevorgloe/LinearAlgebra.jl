@@ -25,11 +25,11 @@ function isone(A::AbstractMatrix)
 end
 
 @inline function _isone_triacheck(A::AbstractMatrix)
-    @inbounds for i in axes(A,2), j in axes(A,1)
+    @inbounds for i in axes(A, 2), j in axes(A, 1)
         if i == j
-            isone(A[i,i]) || return false
+            isone(A[i, i]) || return false
         else
-            iszero(A[i,j]) && iszero(A[j,i]) || return false
+            iszero(A[i, j]) && iszero(A[j, i]) || return false
         end
     end
     return true
@@ -37,11 +37,11 @@ end
 
 # Inner loop over rows to be friendly to the CPU cache
 @inline function _isone_cachefriendly(A::AbstractMatrix)
-    @inbounds for i in axes(A,2), j in axes(A,1)
+    @inbounds for i in axes(A, 2), j in axes(A, 1)
         if i == j
-            isone(A[i,i]) || return false
+            isone(A[i, i]) || return false
         else
-            iszero(A[j,i]) || return false
+            iszero(A[j, i]) || return false
         end
     end
     return true
@@ -69,7 +69,7 @@ julia> A
 ```
 """
 isposdef!(A::AbstractMatrix) =
-    ishermitian(A) && isposdef(cholesky!(Hermitian(A); check = false))
+    ishermitian(A) && isposdef(cholesky!(Hermitian(A); check=false))
 
 """
     isposdef(A) -> Bool
@@ -91,14 +91,14 @@ true
 ```
 """
 isposdef(A::AbstractMatrix) =
-    ishermitian(A) && isposdef(cholesky(Hermitian(A); check = false))
-isposdef(x::Number) = imag(x)==0 && real(x) > 0
+    ishermitian(A) && isposdef(cholesky(Hermitian(A); check=false))
+isposdef(x::Number) = imag(x) == 0 && real(x) > 0
 
 function norm(x::StridedVector{T}, rx::Union{UnitRange{TI},AbstractRange{TI}}) where {T<:BlasFloat,TI<:Integer}
     if minimum(rx) < 1 || maximum(rx) > length(x)
         throw(BoundsError(x, rx))
     end
-    GC.@preserve x BLAS.nrm2(length(rx), pointer(x)+(first(rx)-1)*sizeof(T), step(rx))
+    GC.@preserve x BLAS.nrm2(length(rx), pointer(x) + (first(rx) - 1) * sizeof(T), step(rx))
 end
 
 norm1(x::Union{Array{T},StridedVector{T}}) where {T<:BlasReal} =
@@ -155,7 +155,7 @@ function triu!(M::AbstractMatrix, k::Integer)
     m, n = size(M)
     for j in 1:min(n, m + k)
         for i in max(1, j - k + 1):m
-            @inbounds M[i,j] = _zero(M, i,j)
+            @inbounds M[i, j] = _zero(M, i, j)
         end
     end
     M
@@ -193,7 +193,7 @@ function tril!(M::AbstractMatrix, k::Integer)
     m, n = size(M)
     for j in max(1, k + 1):n
         for i in 1:min(j - k - 1, m)
-            @inbounds M[i,j] = _zero(M, i,j)
+            @inbounds M[i, j] = _zero(M, i, j)
         end
     end
     M
@@ -227,8 +227,8 @@ function fillband!(A::AbstractMatrix{T}, x, l, u) where T
     require_one_based_indexing(A)
     m, n = size(A)
     xT = convert(T, x)
-    for j in axes(A,2)
-        for i in max(1,j-u):min(m,j-l)
+    for j in axes(A, 2)
+        for i in max(1, j - u):min(m, j - l)
             @inbounds A[i, j] = xT
         end
     end
@@ -284,22 +284,22 @@ StepRangeLen(CartesianIndex(1, 1), CartesianIndex(1, 1), 5)
 !!! compat "Julia 1.11"
      Specifying an `IndexStyle` requires at least Julia 1.11.
 """
-function diagind(A::AbstractMatrix, k::Integer=0, indexstyle::IndexStyle = IndexLinear())
+function diagind(A::AbstractMatrix, k::Integer=0, indexstyle::IndexStyle=IndexLinear())
     require_one_based_indexing(A)
-    diagind(indexstyle, size(A,1), size(A,2), k)
+    diagind(indexstyle, size(A, 1), size(A, 2), k)
 end
 
 diagind(A::AbstractMatrix, indexstyle::IndexStyle) = diagind(A, 0, indexstyle)
 
 function diagind(::IndexCartesian, m::Integer, n::Integer, k::Integer=0)
-    Cstart = CartesianIndex(1 + max(0,-k), 1 + max(0,k))
+    Cstart = CartesianIndex(1 + max(0, -k), 1 + max(0, k))
     Cstep = CartesianIndex(1, 1)
-    length = max(0, k <= 0 ? min(m+k, n) : min(m, n-k))
+    length = max(0, k <= 0 ? min(m + k, n) : min(m, n - k))
     StepRangeLen(Cstart, Cstep, length)
 end
 
 diagind(::IndexLinear, m::Integer, n::Integer, k::Integer=0) =
-    k <= 0 ? range(1-k, step=m+1, length=min(m+k, n)) : range(k*m+1, step=m+1, length=min(m, n-k))
+    k <= 0 ? range(1 - k, step=m + 1, length=min(m + k, n)) : range(k * m + 1, step=m + 1, length=min(m, n - k))
 diagind(m::Integer, n::Integer, k::Integer=0) = diagind(IndexLinear(), m, n, k)
 
 """
@@ -398,7 +398,7 @@ julia> diagm(1 => [1,2,3], 1 => [1,2,3])
 ```
 """
 diagm(kv::Pair{<:Integer,<:AbstractVector}...) = _diagm(nothing, kv...)
-diagm(m::Integer, n::Integer, kv::Pair{<:Integer,<:AbstractVector}...) = _diagm((Int(m),Int(n)), kv...)
+diagm(m::Integer, n::Integer, kv::Pair{<:Integer,<:AbstractVector}...) = _diagm((Int(m), Int(n)), kv...)
 function _diagm(size, kv::Pair{<:Integer,<:AbstractVector}...)
     A = diagm_container(size, kv...)
     for p in kv
@@ -414,8 +414,8 @@ function diagm_size(size::Nothing, kv::Pair{<:Integer,<:AbstractVector}...)
     return mnmax, mnmax
 end
 function diagm_size(size::Tuple{Int,Int}, kv::Pair{<:Integer,<:AbstractVector}...)
-    mmax = mapreduce(x -> length(x.second) - min(0,Int(x.first)), max, kv; init=0)
-    nmax = mapreduce(x -> length(x.second) + max(0,Int(x.first)), max, kv; init=0)
+    mmax = mapreduce(x -> length(x.second) - min(0, Int(x.first)), max, kv; init=0)
+    nmax = mapreduce(x -> length(x.second) + max(0, Int(x.first)), max, kv; init=0)
     m, n = size
     (m ≥ mmax && n ≥ nmax) || throw(DimensionMismatch(lazy"invalid size=$size"))
     return m, n
@@ -465,8 +465,8 @@ function tr(A::StridedMatrix{T}) where T
 end
 
 _kronsize(A::AbstractMatrix, B::AbstractMatrix) = map(*, size(A), size(B))
-_kronsize(A::AbstractMatrix, B::AbstractVector) = (size(A, 1)*length(B), size(A, 2))
-_kronsize(A::AbstractVector, B::AbstractMatrix) = (length(A)*size(B, 1), size(B, 2))
+_kronsize(A::AbstractMatrix, B::AbstractVector) = (size(A, 1) * length(B), size(A, 2))
+_kronsize(A::AbstractVector, B::AbstractMatrix) = (length(A) * size(B, 1), size(B, 2))
 
 """
     kron!(C, A, B)
@@ -487,7 +487,7 @@ function kron!(c::AbstractVector, a::AbstractVector, b::AbstractVector)
     @inbounds for i in eachindex(a)
         ai = a[i]
         for k in eachindex(b)
-            c[m] = ai*b[k]
+            c[m] = ai * b[k]
             m += 1
         end
     end
@@ -498,10 +498,10 @@ kron!(c::AbstractVecOrMat, a::Number, b::AbstractVecOrMat) = mul!(c, a, b)
 
 function _kron!(C, A::AbstractMatrix, B::AbstractMatrix)
     m = firstindex(C)
-    @inbounds for j in axes(A,2), l in axes(B,2), i in axes(A,1)
-        Aij = A[i,j]
-        for k in axes(B,1)
-            C[m] = Aij*B[k,l]
+    @inbounds for j in axes(A, 2), l in axes(B, 2), i in axes(A, 1)
+        Aij = A[i, j]
+        for k in axes(B, 1)
+            C[m] = Aij * B[k, l]
             m += 1
         end
     end
@@ -509,10 +509,10 @@ function _kron!(C, A::AbstractMatrix, B::AbstractMatrix)
 end
 function _kron!(C, A::AbstractMatrix, b::AbstractVector)
     m = firstindex(C)
-    @inbounds for j in axes(A,2), i in axes(A,1)
-        Aij = A[i,j]
+    @inbounds for j in axes(A, 2), i in axes(A, 1)
+        Aij = A[i, j]
         for k in eachindex(b)
-            C[m] = Aij*b[k]
+            C[m] = Aij * b[k]
             m += 1
         end
     end
@@ -520,10 +520,10 @@ function _kron!(C, A::AbstractMatrix, b::AbstractVector)
 end
 function _kron!(C, a::AbstractVector, B::AbstractMatrix)
     m = firstindex(C)
-    @inbounds for l in axes(B,2), i in eachindex(a)
+    @inbounds for l in axes(B, 2), i in eachindex(a)
         ai = a[i]
-        for k in axes(B,1)
-            C[m] = ai*B[k,l]
+        for k in axes(B, 1)
+            C[m] = ai * B[k, l]
             m += 1
         end
     end
@@ -577,14 +577,14 @@ julia> reshape(kron(v,w), (length(w), length(v)))
 ```
 """
 function kron(A::AbstractVecOrMat{T}, B::AbstractVecOrMat{S}) where {T,S}
-    C = Matrix{promote_op(*,T,S)}(undef, _kronsize(A, B))
+    C = Matrix{promote_op(*, T, S)}(undef, _kronsize(A, B))
     return kron!(C, A, B)
 end
 function kron(a::AbstractVector{T}, b::AbstractVector{S}) where {T,S}
-    c = Vector{promote_op(*,T,S)}(undef, length(a)*length(b))
+    c = Vector{promote_op(*, T, S)}(undef, length(a) * length(b))
     return kron!(c, a, b)
 end
-kron(a::Number, b::Union{Number, AbstractVecOrMat}) = a * b
+kron(a::Number, b::Union{Number,AbstractVecOrMat}) = a * b
 kron(a::AbstractVecOrMat, b::Number) = a * b
 kron(a::AdjointAbsVec, b::AdjointAbsVec) = adjoint(kron(adjoint(a), adjoint(b)))
 kron(a::AdjOrTransAbsVec, b::AdjOrTransAbsVec) = transpose(kron(transpose(a), transpose(b)))
@@ -604,7 +604,7 @@ end
 function schurpow(A::AbstractMatrix, p)
     if istriu(A)
         # Integer part
-        retmat = A ^ floor(Integer, p)
+        retmat = A^floor(Integer, p)
         # Real part
         if p - floor(p) == 0.5
             # special case: A^0.5 === sqrt(A)
@@ -613,9 +613,9 @@ function schurpow(A::AbstractMatrix, p)
             retmat = retmat * powm!(UpperTriangular(float.(A)), real(p - floor(p)))
         end
     else
-        S,Q,d = Schur{Complex}(schur(A))
+        S, Q, d = Schur{Complex}(schur(A))
         # Integer part
-        R = S ^ floor(Integer, p)
+        R = S^floor(Integer, p)
         # Real part
         if p - floor(p) == 0.5
             # special case: A^0.5 === sqrt(A)
@@ -679,7 +679,7 @@ julia> [1 2; 0 3]^3
  0  27
 ```
 """
-(^)(A::AbstractMatrix, p::Number) = exp(p*log(A))
+(^)(A::AbstractMatrix, p::Number) = exp(p * log(A))
 
 # Matrix exponential
 
@@ -734,7 +734,7 @@ true
 cis(A::AbstractMatrix) = exp(im * A)  # fallback
 cis(A::AbstractMatrix{<:Base.HWNumber}) = exp_maybe_inplace(float.(im .* A))
 
-exp_maybe_inplace(A::StridedMatrix{<:Union{ComplexF32, ComplexF64}}) = exp!(A)
+exp_maybe_inplace(A::StridedMatrix{<:Union{ComplexF32,ComplexF64}}) = exp!(A)
 exp_maybe_inplace(A) = exp(A)
 
 function copytri_maybe_inplace(A::StridedMatrix, uplo, conjugate::Bool=false, diag::Bool=false)
@@ -743,10 +743,10 @@ end
 function copytri_maybe_inplace(A, uplo, conjugate::Bool=false, diag::Bool=false)
     k = Int(diag)
     if uplo == 'U'
-        B = triu(A, 1-k)
+        B = triu(A, 1 - k)
         triu(A, k) + (conjugate ? copy(adjoint(B)) : copy(transpose(B)))
     elseif uplo == 'L'
-        B = tril(A, k-1)
+        B = tril(A, k - 1)
         tril(A, -k) + (conjugate ? copy(adjoint(B)) : copy(transpose(B)))
     else
         throw(ArgumentError(lazy"uplo argument must be 'U' (upper) or 'L' (lower), got $uplo"))
@@ -775,7 +775,7 @@ julia> ℯ^[1 2; 0 3]
  0.0      20.0855
 ```
 """
-Base.:^(b::Number, A::AbstractMatrix) = exp_maybe_inplace(log(b)*A)
+Base.:^(b::Number, A::AbstractMatrix) = exp_maybe_inplace(log(b) * A)
 # method for ℯ to explicitly elide the log(b) multiplication
 Base.:^(::Irrational{:ℯ}, A::AbstractMatrix) = exp(A)
 
@@ -792,21 +792,21 @@ function exp!(A::StridedMatrix{T}) where T<:BlasFloat
         return copytri!(parent(exp(Hermitian(A))), 'U', true)
     end
     ilo, ihi, scale = LAPACK.gebal!('B', A)    # modifies A
-    nA   = opnorm(A, 1)
+    nA = opnorm(A, 1)
     ## For sufficiently small nA, use lower order Padé-Approximations
     if (nA <= 2.1)
         if nA > 0.95
-            C = T[17643225600.,8821612800.,2075673600.,302702400.,
-                     30270240.,   2162160.,    110880.,     3960.,
-                           90.,         1.]
+            C = T[17643225600., 8821612800., 2075673600., 302702400.,
+                30270240., 2162160., 110880., 3960.,
+                90., 1.]
         elseif nA > 0.25
-            C = T[17297280.,8648640.,1995840.,277200.,
-                     25200.,   1512.,     56.,     1.]
+            C = T[17297280., 8648640., 1995840., 277200.,
+                25200., 1512., 56., 1.]
         elseif nA > 0.015
-            C = T[30240.,15120.,3360.,
-                    420.,   30.,   1.]
+            C = T[30240., 15120., 3360.,
+                420., 30., 1.]
         else
-            C = T[120.,60.,12.,1.]
+            C = T[120., 60., 12., 1.]
         end
         A2 = A * A
         # Compute U and V: Even/odd terms in Padé numerator & denom
@@ -815,14 +815,14 @@ function exp!(A::StridedMatrix{T}) where T<:BlasFloat
         U = similar(P)
         V = similar(P)
         for ind in CartesianIndices(P)
-            U[ind] = C[4]*P[ind] + C[2]*I[ind]
-            V[ind] = C[3]*P[ind] + C[1]*I[ind]
+            U[ind] = C[4] * P[ind] + C[2] * I[ind]
+            V[ind] = C[3] * P[ind] + C[1] * I[ind]
         end
-        for k in 2:(div(length(C), 2) - 1)
+        for k in 2:(div(length(C), 2)-1)
             P *= A2
             for ind in eachindex(P, U, V)
-                U[ind] += C[2k + 2] * P[ind]
-                V[ind] += C[2k + 1] * P[ind]
+                U[ind] += C[2k+2] * P[ind]
+                V[ind] += C[2k+1] * P[ind]
             end
         end
 
@@ -839,19 +839,19 @@ function exp!(A::StridedMatrix{T}) where T<:BlasFloat
         end
         X = LAPACK.gesv!(VminU, VplusU)[1]
     else
-        s  = log2(nA/5.4)               # power of 2 later reversed by squaring
+        s = log2(nA / 5.4)               # power of 2 later reversed by squaring
         if s > 0
-            si = ceil(Int,s)
-            twopowsi = convert(T,2^si)
+            si = ceil(Int, s)
+            twopowsi = convert(T, 2^si)
             for ind in eachindex(A)
                 A[ind] /= twopowsi
             end
         end
-        CC = T[64764752532480000.,32382376266240000.,7771770303897600.,
-                1187353796428800.,  129060195264000.,  10559470521600.,
-                    670442572800.,      33522128640.,      1323241920.,
-                        40840800.,           960960.,           16380.,
-                             182.,                1.]
+        CC = T[64764752532480000., 32382376266240000., 7771770303897600.,
+            1187353796428800., 129060195264000., 10559470521600.,
+            670442572800., 33522128640., 1323241920.,
+            40840800., 960960., 16380.,
+            182., 1.]
         A2 = A * A
         A4 = A2 * A2
         A6 = A2 * A4
@@ -861,10 +861,10 @@ function exp!(A::StridedMatrix{T}) where T<:BlasFloat
         # U  = A * (A6 * (CC[14].*A6 .+ CC[12].*A4 .+ CC[10].*A2) .+
         #           CC[8].*A6 .+ CC[6].*A4 .+ CC[4]*A2+CC[2]*I)
         for ind in eachindex(tmp1)
-            tmp1[ind] = CC[14]*A6[ind] + CC[12]*A4[ind] + CC[10]*A2[ind]
-            tmp2[ind] = CC[8]*A6[ind] + CC[6]*A4[ind] + CC[4]*A2[ind]
+            tmp1[ind] = CC[14] * A6[ind] + CC[12] * A4[ind] + CC[10] * A2[ind]
+            tmp2[ind] = CC[8] * A6[ind] + CC[6] * A4[ind] + CC[4] * A2[ind]
         end
-        mul!(tmp2, true,CC[2]*I, true, true) # tmp2 .+= CC[2]*I
+        mul!(tmp2, true, CC[2] * I, true, true) # tmp2 .+= CC[2]*I
         U = mul!(tmp2, A6, tmp1, true, true)
         U, tmp1 = mul!(tmp1, A, U), A # U = A * U0
 
@@ -872,10 +872,10 @@ function exp!(A::StridedMatrix{T}) where T<:BlasFloat
         # V  = A6 * (CC[13].*A6 .+ CC[11].*A4 .+ CC[9].*A2) .+
         #           CC[7].*A6 .+ CC[5].*A4 .+ CC[3]*A2 .+ CC[1]*I
         for ind in eachindex(tmp1)
-            tmp1[ind] = CC[13]*A6[ind] + CC[11]*A4[ind] + CC[9]*A2[ind]
-            tmp2[ind] = CC[7]*A6[ind] + CC[5]*A4[ind] + CC[3]*A2[ind]
+            tmp1[ind] = CC[13] * A6[ind] + CC[11] * A4[ind] + CC[9] * A2[ind]
+            tmp2[ind] = CC[7] * A6[ind] + CC[5] * A4[ind] + CC[3] * A2[ind]
         end
-        mul!(tmp2, true, CC[1]*I, true, true) # tmp2 .+= CC[1]*I
+        mul!(tmp2, true, CC[1] * I, true, true) # tmp2 .+= CC[1]*I
         V = mul!(tmp2, A6, tmp1, true, true)
 
         for ind in eachindex(tmp1)
@@ -886,7 +886,7 @@ function exp!(A::StridedMatrix{T}) where T<:BlasFloat
 
         if s > 0
             # Repeated squaring to compute X = r_13^(2^si)
-            for t=1:si
+            for t = 1:si
                 mul!(tmp2, X, X)
                 X, tmp2 = tmp2, X
             end
@@ -897,10 +897,10 @@ function exp!(A::StridedMatrix{T}) where T<:BlasFloat
     for j = ilo:ihi
         scj = scale[j]
         for i = 1:n
-            X[j,i] *= scj
+            X[j, i] *= scj
         end
         for i = 1:n
-            X[i,j] /= scj
+            X[i, j] /= scj
         end
     end
 
@@ -919,11 +919,11 @@ end
 
 ## Swap rows i and j and columns i and j in X
 function rcswap!(i::Integer, j::Integer, X::AbstractMatrix{<:Number})
-    for k = axes(X,1)
-        X[k,i], X[k,j] = X[k,j], X[k,i]
+    for k = axes(X, 1)
+        X[k, i], X[k, j] = X[k, j], X[k, i]
     end
-    for k = axes(X,2)
-        X[i,k], X[j,k] = X[j,k], X[i,k]
+    for k = axes(X, 2)
+        X[i, k], X[j, k] = X[j, k], X[i, k]
     end
 end
 
@@ -1044,7 +1044,8 @@ julia> sqrt(A)
 sqrt(::AbstractMatrix)
 
 function sqrt(A::AbstractMatrix{T}) where {T<:Union{Real,Complex}}
-    if checksquare(A) == 0
+    n = checksquare(A)
+    if n == 0
         return copy(float(A))
     elseif isdiag(A)
         if T <: Real && any(<(0), diagview(A))
@@ -1195,7 +1196,7 @@ function cos(A::AbstractMatrix{<:Complex})
     Y = exp_maybe_inplace(N)
     # Compute (X + Y)/2 and return the result.
     # Compute the result in-place if X is strided
-    _broadcast!!((x,y) -> (x + y)/2, X, X, Y)
+    _broadcast!!((x, y) -> (x + y) / 2, X, X, Y)
 end
 
 """
@@ -1237,7 +1238,7 @@ function sin(A::AbstractMatrix{<:Complex})
     Y = exp_maybe_inplace(Mneg)
     # Compute (X - Y)/2im and return the result.
     # Compute the result in-place if X is strided
-    _broadcast!!((x,y) -> (x - y)/2im, X, X, Y)
+    _broadcast!!((x, y) -> (x - y) / 2im, X, X, Y)
 end
 
 """
@@ -1269,7 +1270,7 @@ function sincos(A::AbstractMatrix{<:Real})
         cosA = copytri_maybe_inplace(Pcos, 'U')
         return sinA, cosA
     end
-    M =  im .* float.(A)
+    M = im .* float.(A)
     c, s = reim(exp_maybe_inplace(M))
     return s, c
 end
@@ -1290,15 +1291,15 @@ function sincos(A::AbstractMatrix{<:Complex})
 end
 function _sincos(X::StridedMatrix, Y::StridedMatrix)
     @inbounds for i in eachindex(X, Y)
-        x, y = X[i]/2, Y[i]/2
-        X[i] = Complex(imag(x)-imag(y), real(y)-real(x))
-        Y[i] = x+y
+        x, y = X[i] / 2, Y[i] / 2
+        X[i] = Complex(imag(x) - imag(y), real(y) - real(x))
+        Y[i] = x + y
     end
     return X, Y
 end
 function _sincos(X, Y)
     T = eltype(X)
-    S = T(0.5)*im .* (Y .- X)
+    S = T(0.5) * im .* (Y .- X)
     C = T(0.5) .* (X .+ Y)
     S, C
 end
@@ -1346,7 +1347,7 @@ function cosh(A::AbstractMatrix)
     X = exp(A)
     negA = @. float(-A)
     Y = exp_maybe_inplace(negA)
-    _broadcast!!((x,y) -> (x + y)/2, X, X, Y)
+    _broadcast!!((x, y) -> (x + y) / 2, X, X, Y)
 end
 
 """
@@ -1364,7 +1365,7 @@ function sinh(A::AbstractMatrix)
     X = exp(A)
     negA = @. float(-A)
     Y = exp_maybe_inplace(negA)
-    _broadcast!!((x,y) -> (x - y)/2, X, X, Y)
+    _broadcast!!((x, y) -> (x - y) / 2, X, X, Y)
 end
 
 """
@@ -1566,8 +1567,8 @@ function atanh(A::AbstractMatrix)
 end
 
 for (finv, f, finvh, fh, fn) in ((:sec, :cos, :sech, :cosh, "secant"),
-                                 (:csc, :sin, :csch, :sinh, "cosecant"),
-                                 (:cot, :tan, :coth, :tanh, "cotangent"))
+    (:csc, :sin, :csch, :sinh, "cosecant"),
+    (:cot, :tan, :coth, :tanh, "cotangent"))
     name = string(finv)
     hname = string(finvh)
     @eval begin
@@ -1585,8 +1586,8 @@ for (finv, f, finvh, fh, fn) in ((:sec, :cos, :sech, :cosh, "secant"),
 end
 
 for (tfa, tfainv, hfa, hfainv, fn) in ((:asec, :acos, :asech, :acosh, "secant"),
-                                       (:acsc, :asin, :acsch, :asinh, "cosecant"),
-                                       (:acot, :atan, :acoth, :atanh, "cotangent"))
+    (:acsc, :asin, :acsch, :asinh, "cosecant"),
+    (:acot, :atan, :acoth, :atanh, "cotangent"))
     tname = string(tfa)
     hname = string(hfa)
     @eval begin
@@ -1646,7 +1647,9 @@ functions (e.g. eigensolvers) which will use specialized methods for `Bidiagonal
 function factorize(A::AbstractMatrix{T}) where T
     m, n = size(A)
     if m == n
-        if m == 1 return A[1] end
+        if m == 1
+            return A[1]
+        end
         utri, utri1, ltri, ltri1, sym, herm = getstructure(A)
         if ltri1
             if ltri
@@ -1664,7 +1667,7 @@ function factorize(A::AbstractMatrix{T}) where T
             if utri1
                 # TODO: enable once a specialized, non-dense bunchkaufman method exists
                 # if (herm & (T <: Complex)) | sym
-                    # return bunchkaufman(SymTridiagonal(diag(A), diag(A, -1)))
+                # return bunchkaufman(SymTridiagonal(diag(A), diag(A, -1)))
                 # end
                 return lu(Tridiagonal(diag(A, -1), diag(A), diag(A, 1)))
             end
@@ -1682,42 +1685,48 @@ function factorize(A::AbstractMatrix{T}) where T
     end
     qr(A, ColumnNorm())
 end
-factorize(A::Adjoint)   =   adjoint(factorize(parent(A)))
+factorize(A::Adjoint) = adjoint(factorize(parent(A)))
 factorize(A::Transpose) = transpose(factorize(parent(A)))
-factorize(a::Number)    = a # same as how factorize behaves on Diagonal types
+factorize(a::Number) = a # same as how factorize behaves on Diagonal types
 
 function getstructure(A::StridedMatrix)
     require_one_based_indexing(A)
     m, n = size(A)
-    if m == 1 return A[1] end
-    utri    = true
-    utri1   = true
-    herm    = true
-    sym     = true
+    if m == 1
+        return A[1]
+    end
+    utri = true
+    utri1 = true
+    herm = true
+    sym = true
     for j = 1:n, i = j:m
         if (j < n) && (i > j) && utri1 # indices are off-diagonal
-            if A[i,j] != 0
+            if A[i, j] != 0
                 utri1 = i == j + 1
                 utri = false
             end
         end
         if sym
-            sym &= A[i,j] == transpose(A[j,i])
+            sym &= A[i, j] == transpose(A[j, i])
         end
         if herm
-            herm &= A[i,j] == adjoint(A[j,i])
+            herm &= A[i, j] == adjoint(A[j, i])
         end
-        if !(utri1|herm|sym) break end
+        if !(utri1 | herm | sym)
+            break
+        end
     end
     ltri = true
     ltri1 = true
     for j = 3:n, i = 1:j-2
-        ltri1 &= A[i,j] == 0
-        if !ltri1 break end
+        ltri1 &= A[i, j] == 0
+        if !ltri1
+            break
+        end
     end
     if ltri1
         for i = 1:n-1
-            if A[i,i+1] != 0
+            if A[i, i+1] != 0
                 ltri = false
                 break
             end
@@ -1728,12 +1737,12 @@ function getstructure(A::StridedMatrix)
     return (utri, utri1, ltri, ltri1, sym, herm)
 end
 _check_sym_herm(A) = (issymmetric(A), ishermitian(A))
-_check_sym_herm(A::AbstractMatrix{<:Real}) = (sym = issymmetric(A); (sym,sym))
+_check_sym_herm(A::AbstractMatrix{<:Real}) = (sym = issymmetric(A); (sym, sym))
 function getstructure(A::AbstractMatrix)
-    utri1 = istriu(A,-1)
+    utri1 = istriu(A, -1)
     # utri = istriu(A), but since we've already checked istriu(A,-1),
     # we only need to check that the subdiagonal band is zero
-    utri = utri1 && iszero(diag(A,-1))
+    utri = utri1 && iszero(diag(A, -1))
     sym, herm = _check_sym_herm(A)
     if sym || herm
         # in either case, the lower and upper triangular halves have identical band structures
@@ -1741,10 +1750,10 @@ function getstructure(A::AbstractMatrix)
         ltri1 = utri1
         ltri = utri
     else
-        ltri1 = istril(A,1)
+        ltri1 = istril(A, 1)
         # ltri = istril(A), but since we've already checked istril(A,1),
         # we only need to check the superdiagonal band is zero
-        ltri = ltri1 && iszero(diag(A,1))
+        ltri = ltri1 && iszero(diag(A, 1))
     end
     return (utri, utri1, ltri, ltri1, sym, herm)
 end
@@ -1808,9 +1817,9 @@ julia> M * N
 
 [^KY88]: Konstantinos Konstantinides and Kung Yao, "Statistical analysis of effective singular values in matrix rank determination", IEEE Transactions on Acoustics, Speech and Signal Processing, 36(5), 1988, 757-763. [doi:10.1109/29.1585](https://doi.org/10.1109/29.1585)
 """
-function pinv(A::AbstractMatrix{T}; atol::Real=0, rtol::Real = (eps(real(float(oneunit(T))))*min(size(A)...))*iszero(atol)) where T
+function pinv(A::AbstractMatrix{T}; atol::Real=0, rtol::Real=(eps(real(float(oneunit(T)))) * min(size(A)...)) * iszero(atol)) where T
     m, n = size(A)
-    Tout = typeof(zero(T)/sqrt(oneunit(T) + oneunit(T)))
+    Tout = typeof(zero(T) / sqrt(oneunit(T) + oneunit(T)))
     if m == 0 || n == 0
         return similar(A, Tout, (n, m))
     end
@@ -1822,11 +1831,11 @@ function pinv(A::AbstractMatrix{T}; atol::Real=0, rtol::Real = (eps(real(float(o
         diagview(B) .= (x -> abs(x) > tol ? pinv(x) : zero(x)).(dA)
         return B
     end
-    SVD         = svd(A)
-    tol2        = max(rtol*maximum(SVD.S), atol)
-    Stype       = eltype(SVD.S)
-    Sinv        = fill!(similar(A, Stype, length(SVD.S)), 0)
-    index       = SVD.S .> tol2
+    SVD = svd(A)
+    tol2 = max(rtol * maximum(SVD.S), atol)
+    Stype = eltype(SVD.S)
+    Sinv = fill!(similar(A, Stype, length(SVD.S)), 0)
+    index = SVD.S .> tol2
     Sinv[index] .= pinv.(view(SVD.S, index))
     return SVD.Vt' * (Diagonal(Sinv) * SVD.U')
 end
@@ -1876,13 +1885,13 @@ julia> nullspace(M, atol=0.95)
  1.0
 ```
 """
-function nullspace(A::AbstractVecOrMat; atol::Real=0, rtol::Real = (min(size(A, 1), size(A, 2))*eps(real(float(oneunit(eltype(A))))))*iszero(atol))
+function nullspace(A::AbstractVecOrMat; atol::Real=0, rtol::Real=(min(size(A, 1), size(A, 2)) * eps(real(float(oneunit(eltype(A)))))) * iszero(atol))
     m, n = size(A, 1), size(A, 2)
     (m == 0 || n == 0) && return Matrix{eigtype(eltype(A))}(I, n, n)
     SVD = svd(A; full=true)
-    tol = max(atol, SVD.S[1]*rtol)
+    tol = max(atol, SVD.S[1] * rtol)
     indstart = sum(s -> s .> tol, SVD.S) + 1
-    return copy((@view SVD.Vt[indstart:end,:])')
+    return copy((@view SVD.Vt[indstart:end, :])')
 end
 
 """
@@ -1904,7 +1913,7 @@ function cond(A::AbstractMatrix, p::Real=2)
         checksquare(A)
         try
             Ainv = inv(A)
-            return opnorm(A, p)*opnorm(Ainv, p)
+            return opnorm(A, p) * opnorm(Ainv, p)
         catch e
             if isa(e, LAPACKException) || isa(e, SingularException)
                 return convert(float(real(eltype(A))), Inf)
@@ -2036,4 +2045,4 @@ function lyap(A::AbstractMatrix{T}, C::AbstractMatrix{T}) where {T<:BlasFloat}
     Y, scale = LAPACK.trsyl!('N', T <: Complex ? 'C' : 'T', R, R, D)
     rmul!(Q * Y * Q', inv(scale))
 end
-lyap(a::Union{Real,Complex}, c::Union{Real,Complex}) = -c/(2real(a))
+lyap(a::Union{Real,Complex}, c::Union{Real,Complex}) = -c / (2real(a))
